@@ -1,0 +1,45 @@
+$prim: #27496d;
+$sec: crimson;
+
+.form {
+  width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  box-shadow: 2px 2px 5px 1px #0003;
+  border-radius: 5px;
+  background: #FFF;
+
+  h1 {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  .v-input {
+    margin: 5px 30px;
+    line-height: 24;
+  }
+
+  .feedback {
+    color: $sec !important;
+  }
+
+  .v-select__selections {
+    line-height: 24px;
+  }
+
+  .v-btn[type='submit'] {
+    display: block;
+    background: $prim !important;
+    color: #FFF;
+    margin: 20px auto;
+    font-size: 1.5em;
+    width: 200px;
+    height: 60px;
+    font-weight: bold;
+  }
+
+  .container > .v-icon {
+    color: $sec !important;
+  }
+}
