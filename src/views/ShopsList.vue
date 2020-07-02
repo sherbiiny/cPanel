@@ -3,17 +3,30 @@
     <v-container>
 
       <!-- Form -->
+      <div class="info-group">
+        <span>عدد المحلات <b> {{ shops.length }}</b></span>
+        <span> عدد المحلات المتاحة <b>  {{ shops.length - bookedLength }}</b></span>
+        <span> عدد المحلات المحجوزة <b>  {{ bookedLength }}</b></span>
+      </div>
       <v-form>
-        <v-select :items="floorItems" v-model="floor" label="الدور" class="mr-10"></v-select>
-        <v-text-field v-model="block" maxlength="1" label="البلوك" class="mr-10"></v-text-field>
-        <v-text-field v-model="sNum" type="number" min="1" max="9" label="رقم المحل" class="mr-10"></v-text-field>
+        <v-select height="45px" :items="floorItems" v-model="floor" label="الدور" class="mr-10"></v-select>
+        <v-text-field height="45px" v-model="block" maxlength="1" label="البلوك" class="mr-10"></v-text-field>
+        <v-text-field height="45px" v-model="sNum" type="number" min="1" max="9" label="رقم المحل" class="mr-10"></v-text-field>
+        <v-checkbox v-model="bookedOnly" label="عرض المحجوز فقط"></v-checkbox>
+        <v-checkbox v-model="notBookedOnly" label="عرض المتاح فقط"></v-checkbox>
       </v-form>
       <v-icon large @click="$router.push({name: 'Home'})">fa fa-home</v-icon>
 
       <!-- Shops -->
       <v-row class="mt-10">
         <v-col lg="2" md="3" sm="4" v-for="shop in filteredShops" :key="shop.id" cols="12">
-          <v-card class="shop" :class="shop.premium ? 'premium' : 'normal'" router :to="{name: 'Shop', params: {shop_id: shop.id}}">
+          <v-card class="shop premium" v-if="shop.premium == 'premium'" router :to="{name: 'Shop', params: {shop_id: shop.id}}">
+            {{ shop.id }}
+          </v-card>
+          <v-card class="shop halfPremium" v-if="shop.premium == 'halfPremium'" router :to="{name: 'Shop', params: {shop_id: shop.id}}">
+            {{ shop.id }}
+          </v-card>
+          <v-card class="shop normal" v-if="shop.premium == 'notPremium'" router :to="{name: 'Shop', params: {shop_id: shop.id}}">
             {{ shop.id }}
           </v-card>
         </v-col>
@@ -33,6 +46,9 @@ export default {
       // Shops
       shops: [],
       filteredShops: [], 
+      bookedOnly: false,
+      notBookedOnly: false,
+      bookedLength: 0,
 
       // Select Items
       floorItems: [
@@ -40,6 +56,9 @@ export default {
         {text: "الدور الأرضي", value: 1},
         {text: "الدور الأول", value: 2},
         {text: "الدور الثاني", value: 3},
+        {text: "الدور الثالث", value: 4},
+        {text: "الدور الرابع", value: 5},
+        {text: "الدور الخامس", value: 6}
       ],
 
       // Form Values
@@ -51,6 +70,8 @@ export default {
 
   // Track the change of form values
   watch: {
+
+    // Search
     floor: {
       handler(val) {
         this.floorChange(val)
@@ -67,15 +88,48 @@ export default {
         this.sNumChange(val)
       }
     },
+
+    // Booked Only 
+    bookedOnly: {
+      handler(val) {
+        if(val) {
+          this.notBookedOnly = false
+          if(this.filteredShops) this.filteredShops = this.filteredShops.filter(shop => shop.booked)
+          else this.filteredShops = this.shops.filter(shop => shop.booked)
+        } else {
+          this.filteredShops = this.shops
+          this.floorChange(this.floor)
+          this.blockChange(this.block)
+          this.sNumChange(this.sNum)
+        }
+      }
+    },
+
+    notBookedOnly: {
+      handler(val) {
+        if(val) {
+          this.bookedOnly = false
+          if(this.filteredShops) this.filteredShops = this.filteredShops.filter(shop => !shop.booked)
+          else this.filteredShops = this.shops.filter(shop => !shop.booked)
+        } else {
+          this.filteredShops = this.shops
+          this.floorChange(this.floor)
+          this.blockChange(this.block)
+          this.sNumChange(this.sNum)
+        }
+      }
+    }
   },
 
   // When page load
   mounted() {
+    // let premiums = ['1A-1', '1A-8', '1B-1', '1B-6', '1B-7', '1C-1', '1C-4', '1C-5', '1C-8', '1D-1', '1D-3', '1D-5', '1D-6', '1D-7', '1E-1', '1E-2', '1F-1', '1F-6', '1H-1', '1H-3', '1M-1', '1M-3', '2A-4', '2A-5', '2A-6', '2A-7', '2B-1', '2B-2', '2B-6', '2B-7']                   
     db.collection('shops').get()
       .then(res => {
         res.docs.forEach(doc => {
           let shopData = doc.data()
           shopData.id = doc.id
+          if(shopData.booked) this.bookedLength++
           this.shops.push(shopData)
         })
         this.filteredShops = this.shops
@@ -251,6 +305,20 @@ export default {
 }
 .ShopsList {
 
+  .info-group {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 30px;
+
+    span {
+      color: #888 !important;
+
+      b {
+        margin-right: 5px;
+      }
+    }
+  }
+
   .v-form {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -272,6 +340,10 @@ export default {
  
     &.premium {
       border: 3px solid gold;
+    }
+
+    &.halfPremium {
+      border: 3px solid #bd9595;
     }
   }
 

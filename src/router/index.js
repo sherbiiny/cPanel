@@ -6,6 +6,7 @@ import Home from '@/views/Home'
 import ShopInput from '@/views/ShopInput'
 import ClientInput from '@/views/ClientInput'
 import ViewerInput from '@/views/ViewerInput'
+import BookInput from '@/views/BookInput'
 import ShopsList from '@/views/ShopsList'
 import ClientsList from '@/views/ClientsList'
 import Shop from '@/views/Shop'
@@ -13,6 +14,8 @@ import Client from '@/views/Client'
 import Numbers from '@/views/Numbers'
 import Login from '@/views/Login'
 import Viewer from '@/views/Viewer'
+import Booking from '@/views/Booking'
+import Nums from '@/views/Nums'
 
 Vue.use(VueRouter)
 
@@ -39,6 +42,12 @@ const routes = [
    path: '/viewer-input',
    component: ViewerInput,
    name: 'ViewerInput',
+   meta: { requiresAuth: true }
+ },
+ {
+   path: '/book-input',
+   component: BookInput,
+   name: 'BookInput',
    meta: { requiresAuth: true }
  },
  {
@@ -81,6 +90,19 @@ const routes = [
    component: Viewer,
    name: 'Viewer',
    props: true,
+   meta: { requiresAuth: true }
+ },
+ {
+   path: '/booking/:client_id',
+   component: Booking,
+   name: 'Booking',
+   props: true,
+   meta: { requiresAuth: true }
+ },
+ {
+   path: '/nums',
+   component: Nums,
+   name: 'Nums',
    meta: { requiresAuth: true }
  },
 ]

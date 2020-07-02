@@ -5,9 +5,9 @@
     <div class="btn-contaienr">
       <router-link :to="{name: 'ShopInput'}">اضافة محل</router-link>
       <router-link :to="{name: 'ClientInput'}">اضافة عميل</router-link>
-      <router-link :to="{name: 'ViewerInput'}">اضافة عميل استفساري</router-link>
-      <router-link :to="{name: 'ClientsList'}">قائمة العملاء</router-link>
+      <router-link :to="{name: 'BookInput'}">اضافة حجز</router-link>
       <router-link :to="{name: 'ShopsList'}">قائمة المحلات</router-link>
+      <router-link :to="{name: 'ClientsList'}">قائمة العملاء</router-link>
       <router-link :to="{name: 'Numbers'}">ادارة المكالمات</router-link>
     </div>
   </main>

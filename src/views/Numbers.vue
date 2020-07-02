@@ -1,38 +1,44 @@
 <template>
   <main class="Numbers">
     <v-container>
-      <form>
-        <v-dialog v-model="addDialog" persistent max-width="600px">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn color="success" v-bind="attrs" v-on="on" class="form-trigger">
-              اضافة
-            </v-btn>
-          </template>
-          <v-card>
-            <v-card-title>
-              <span class="mx-auto bold my-5">اضافة مكالمة</span>
-            </v-card-title>
-            <v-card-text>
-              <v-container>
-                <v-form @submit='submit()'>
-                  <v-text-field outlined label="الاسم" v-model="name"></v-text-field>
-                  <v-text-field outlined label="الرقم" v-model="number"></v-text-field>
-                  <v-text-field outlined label="المتصل" v-model="caller"></v-text-field>
-                  <v-select outlined label="الحالة" :items="selectItems" v-model="status"></v-select>
-                  <v-textarea outlined label="ملاحظات" v-model="notes"></v-textarea>
-                </v-form>
-              </v-container>
-            </v-card-text>
-            <v-card-actions class="text-center card-actions">
-              <v-btn color="red" text @click="addDialog = false">الغاء</v-btn>
-              <v-btn color="success" @click="submit()">اضافة</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-text-field label="البحث" class="searchInput"></v-text-field>
-      </form>
+      <!-- "Add new" dialog -->
+      <v-dialog v-model="addDialog" max-width="600px">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn color="success" v-bind="attrs" v-on="on" class="add-dialog-trigger">
+            اضافة
+          </v-btn>
+        </template>
+        <v-card>
+          <v-card-title>
+            <span class="mx-auto bold my-5">اضافة مكالمة</span>
+          </v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-form @submit='submit()'>
+                <v-text-field outlined label="الاسم" v-model="name"></v-text-field>
+                <v-text-field outlined label="الرقم" v-model="number"></v-text-field>
+                <v-text-field outlined label="المتصل" v-model="caller"></v-text-field>
+                <v-select outlined label="الحالة" :items="selectItems" v-model="status"></v-select>
+                <v-textarea outlined label="ملاحظات" v-model="notes"></v-textarea>
+              </v-form>
+            </v-container>
+          </v-card-text>
+          <v-card-actions class="text-center card-actions">
+            <v-btn color="red" text @click="addDialog = false">الغاء</v-btn>
+            <v-btn color="success" @click="submit()">اضافة</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Searvh bar -->
+      <v-form submit.prevent class="search-form">
+        <v-select height="45px" :items="searchByItems" v-model="searchBy" label="بحث بواسطة" class="mr-10"></v-select>
+        <v-select height="45px" :items="statusFilterItems" v-model="statusFilter" label="الحالة" class="mr-10"></v-select>
+        <v-text-field height="45px" label="البحث" class="searchInput" v-model="searchKey"></v-text-field>
+      </v-form>
 
       <div class="number-container">
+        <!-- Numbers list -->
         <v-expansion-panels>
           <v-expansion-panel class="panel my-1" v-for="(num, i) in filteredNumbers" :key="i">
             <v-expansion-panel-header class="header">
@@ -43,13 +49,15 @@
             </v-expansion-panel-header>
             <v-expansion-panel-content class="content">
               <v-list>
-                <v-list-item>المتصل -- {{ num.caller }}</v-list-item>
-                <v-list-item v-if="num.status == 'no-answer'">الحالة -- لم يرد</v-list-item>
-                <v-list-item v-if="num.status == 'waiting'">الحالة -- انتظار</v-list-item>
-                <v-list-item v-if="num.status == 'agreed'">الحالة -- تم الاتفاق علي ميعاد</v-list-item>
-                <v-list-item v-if="num.notes">ملاحظات -- {{ num.notes }}</v-list-item>
-                <v-list-item>
-                  <v-dialog v-model="editDialog" persistent max-width="600px">
+                <v-list-item><span>المتصل</span>: {{ num.caller }}</v-list-item>
+                <v-list-item v-if="num.status == 'no-answer'"><span>الحالة</span>: لم يرد</v-list-item>
+                <v-list-item v-if="num.status == 'waiting'"><span>الحالة</span>: انتظار</v-list-item>
+                <v-list-item v-if="num.status == 'agreed'"><span>الحالة</span>: تم الاتفاق علي ميعاد</v-list-item>
+                <v-list-item v-if="num.notes"><span>ملاحظات</span>: {{ num.notes }}</v-list-item>
+                <v-list-item class="mt-5">
+
+                  <!-- Edit dialog -->
+                  <v-dialog v-model="editDialog" max-width="600px">
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn color="warning" @click="assign(num.status, num.notes, num.caller)" v-bind="attrs" v-on="on">
                         تعديل
@@ -74,6 +82,7 @@
                       </v-card-actions>
                     </v-card>
                   </v-dialog>
+                  <v-btn color="success" class="mr-5" v-clipboard:copy="num.number" v-clipboard:success="copied">نسخ الرقم</v-btn>
                 </v-list-item>
               </v-list>
             </v-expansion-panel-content>
@@ -92,34 +101,68 @@
 
 <script>
 import db from '../firebase'
+import store from '../store/index'
+
 
 export default {
   data() {
     return {
+      // Search vars
+      searchKey: null,
+      searchBy: 'phone',
+      searchByItems: [
+        {text: "الرقم", value: "phone"},
+        {text: "الاسم", value: "name"}
+      ],
+
+      // Filter by status vars
+      statusFilter: "all",
+      statusFilterItems: [
+        {text: "الجميع", value: "all"},
+        {text: "لم يرد", value: "no-answer"},
+        {text: "تم الاتفاق", value: "answered"},
+        {text: "انتظار", value: "waiting"}
+      ],
+
+      // Numbers vars
       numbers: [],
       filteredNumbers: [],
+
+      // Add dialog vars
       addDialog: false,
-      editDialog: false,
       number: null,
       name: null,
       notes: null,
       status: null,
       caller: null,
+
+      // Edit dialog vars
+      editDialog: false,
       notesE: null,
       statusE: null,
       callerE: null,
-      snackbar: false,
-      snackbarContent: '',
       selectItems: [
         {text: 'لم يرد', value: 'no-answer'},
         {text: 'تم الاتفاق علي ميعاد', value: 'agreed'},
         {text: 'ويتنج', value: 'waiting'}
-      ]
+      ],
+
+      // Others
+      snackbar: false,
+      snackbarContent: ''
     }
   },
 
   mounted() {
     this.getData()
+  },
+
+  watch: {
+    searchKey: {
+      handler(val) {
+        console.log(val)
+      }
+    }
   },
 
   methods: {
@@ -129,6 +172,7 @@ export default {
       db.collection('numbers').get()
         .then(res => {
           res.docs.forEach(doc => this.numbers.push(doc.data()))
+          this.numbers.map(num => num.number = store.state.convertNumToEng(num.number))
           this.filteredNumbers = this.numbers
         })
     },
@@ -168,6 +212,15 @@ export default {
         this.snackbar = true
         this.getData()
       })
+    },
+
+    copied() {
+      this.snackbarContent = 'تم نسخ الرقم بنجاح'
+      this.snackbar = true
+    },
+
+    filter(val) {
+      
     }
 
   },
@@ -178,60 +231,54 @@ export default {
 .Numbers {
   direction: rtl;
 
-  form {
+  .search-form {
     display: flex;
   }
 
-  .form-trigger {
+  .add-dialog-trigger {
     margin-right: 50px;
     margin-top: 15px;
     font-size: 22px;
-  }
-
-  .searchInput {
-    max-width: 500px;
-    margin: auto;
-    // display: block;
   }
 
   .number-container {
     margin-top: 50px;
   }
 
-}
-
-.card-actions {
-  display: flex;
-  justify-content: center;
-  padding-bottom: 50px;
-}
-
-.bold {
-  font-weight: 600;
-}
-
-.v-expansion-panel-header__icon {
-  margin-right: 20px;
-}
-
-.header {
-  position: relative;
-}
-
-i {
-  display: inline !important;
-
-
-  &.agreed {
-    color: #43A040 !important;
+  .card-actions {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 50px;
   }
 
-  &.no-answer {
-    color: crimson !important;
+  .bold {
+    font-weight: 600;
   }
 
-  &.waiting {
-    color: #FFB300 !important;
+  .v-expansion-panel-header__icon {
+    margin-right: 20px;
+  }
+
+  .header {
+    position: relative;
+  }
+
+  i {
+    display: inline !important;
+
+
+    &.agreed {
+      color: #43A040 !important;
+    }
+
+    &.no-answer {
+      color: crimson !important;
+    }
+
+    &.waiting {
+      color: #FFB300 !important;
+    }
   }
 }
+
 </style>

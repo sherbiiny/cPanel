@@ -3,23 +3,23 @@
     <v-container>
       <v-form class="theForm">
         <v-text-field height="45px" v-model="searchValue" label="البحث"></v-text-field>
-        <v-select height="45px" :items="typeItems" v-model="type" label="بحث بواسطة" class="mr-10"></v-select>
         <v-select height="45px" :items="selectItems" v-model="searchBy" label="بحث بواسطة" class="mr-10"></v-select>
+        <v-select height="45px" :items="typeItems" v-model="type" label="نوع العملاء" class="mr-10"></v-select>
         <v-icon large @click="$router.push({name: 'Home'})">fa fa-home</v-icon>
       </v-form>
 
       <v-row v-if="type == 'clients'">
-        <v-col lg="4" v-for="client in filteredClients" :key="client.cardNum">
+        <v-col lg="4" md="6" sm="12" v-for="client in filteredClients" :key="client.cardNum">
           <v-card class="client" router :to="{name: 'Client', params: {client_id: client.cardNum}}">
             {{ client.clientName }}
           </v-card>
         </v-col>
       </v-row>
 
-      <v-row v-if="type == 'viewers'">
-        <v-col lg="4" v-for="(viewer, i) in filteredViewers" :key="i">
-          <v-card class="client" router :to="{name: 'Viewer', params: {client_id: viewer.phone}}">
-            {{ viewer.clientName }}
+      <v-row v-if="type == 'booking'">
+        <v-col lg="4" md="6" sm="12" v-for="(client, i) in filteredBookingClients" :key="i">
+          <v-card class="client" router :to="{name: 'Booking', params: {client_id: client.cardNum}}">
+            {{ client.clientName }}
           </v-card>
         </v-col>
       </v-row>
@@ -40,15 +40,15 @@ export default {
       ],
       typeItems: [
         {text: 'مشترين', value: 'clients'},
-        {text: 'استفساريين', value: 'viewers'}
+        {text: 'حاجزين', value: 'booking'}
       ],
       searchBy: 'name',
       searchValue: null,
       type: 'clients',
       clients: [],
       filteredClients: [],
-      viewers: [],
-      filteredViewers: []
+      bookingClients: [],
+      filteredBookingClients: []
     }
   },
 
@@ -57,16 +57,17 @@ export default {
       handler(val) {
         if(this.searchBy == 'name') {
           this.filteredClients = this.clients.filter(client => client.clientName.includes(val))
-          this.filteredViewers = this.viewers.filter(viewer => viewer.clientName.includes(val))
+          this.filteredBookingClients = this.bookingClients.filter(viewer => viewer.clientName.includes(val))
         }
 
         if(this.searchBy == 'phone') {
           this.filteredClients = this.clients.filter(client => client.phone.includes(val))
-          this.filteredViewers = this.viewers.filter(viewer => viewer.phone.includes(val))
+          this.filteredBookingClients = this.bookingClients.filter(viewer => viewer.phone.includes(val))
         }
 
         if(this.searchBy == 'cardNum') {
           this.filteredClients = this.clients.filter(client => client.cardNum.includes(val))
+          this.filteredBookingClients = this.bookingClients.filter(viewer => viewer.cardNum.includes(val))
         }
       }
     }
@@ -81,12 +82,12 @@ export default {
         this.filteredClients = this.clients
       })
 
-    db.collection('viewers').get()
+    db.collection('booking').get()
       .then(res => {
         res.docs.forEach(doc => {
-          this.viewers.push(doc.data())
+          this.bookingClients.push(doc.data())
         })
-        this.filteredViewers = this.viewers
+        this.filteredBookingClients = this.bookingClients
       })
   },
 }

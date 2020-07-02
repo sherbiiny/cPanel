@@ -41,6 +41,7 @@
             </v-date-picker>
           </v-menu>
         </div>
+        <v-textarea label="ملاحظات" outlined v-model="notes"></v-textarea>
         <p v-if="feedback" class="feedback text-center">{{ feedback }}</p>
         <v-btn type="submit">تسجيل</v-btn>
         <v-icon large @click="$router.push({name: 'Home'})">fa-arrow-circle-left</v-icon>
@@ -56,6 +57,7 @@
 <script>
 import db from '../firebase'
 import $ from 'jquery'
+import store from '../store/index'
 
 export default {
   data() {
@@ -75,6 +77,8 @@ export default {
       shopInstall: null,
       installSystem: 1,
       finalInstall: null,
+      notes: null,
+      notesArr: [],
 
       // Other variables
       feedback: null,
@@ -108,6 +112,8 @@ export default {
         if(val) this.finalInstall = val * this.installSystem
       }
     },
+
+    notes: {handler(val) {store.state.dealWithNotes(val)}},
 
     installSystem: {
       handler(val) {
@@ -147,7 +153,8 @@ export default {
         totalPrice: this.totalPrice,
         install: this.finalInstall,
         installSystem: this.installSystem,
-        firstDate: this.firstDate
+        firstDate: this.firstDate,
+        notes: this.notesArr
 
       })
         .then(() => {
@@ -167,10 +174,11 @@ export default {
       })
 
       // Set the shop as booked
-      db.collection('shops').doc(this.shopId).update({ booked: true })
+      store.state.setShopAsBooked(this.shopId, this.cardNum)
 
       // Redirect to client page
       this.$router.push({name: 'ClientsList'})
+      
     },
 
     addMonths(date, months) {
